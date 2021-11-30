@@ -36,7 +36,8 @@
           );
           kv.wait().then(async () => {
             kv.subscribeKey("twitch/ev/chat-message", (newVal) => {
-              makeChatMessage(JSON.parse(newVal));
+              // Add to array, but only keep the last 20 messages
+              setMessages([...messages, JSON.parse(newVal)].slice(-20));
             });
             setMessages(await kv.getJSON("twitch/chat-history"));
           });
