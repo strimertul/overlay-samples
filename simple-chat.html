@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat</title>
+    <style>
+      html,
+      body {
+        font-family: sans-serif;
+      }
+      .messagebox {
+        padding: 5px;
+      }
+      .username {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="chat"></main>
+    <script type="module">
+      import Kilovolt from "https://cdn.jsdelivr.net/gh/strimertul/kilovolt-client-ts@6.3.2/dist/kilovolt.js";
+      import { React, ReactDOM } from "https://unpkg.com/es-react@16.13.1";
+      import htm from "https://unpkg.com/htm@3.1.0?module";
+      const html = htm.bind(React.createElement);
+
+      const Chat = (props) => {
+        const [messages, setMessages] = React.useState([]);
+
+        React.useEffect(() => {
+          const kv = new Kilovolt(
+            "ws://localhost:4337/ws",
+            location.hash?.slice(1) // Specify password in hash of webview, ie. chat.html#password
+          );
+          kv.wait().then(async () => {
+            kv.subscribeKey("twitch/ev/chat-message", (newVal) => {
+              makeChatMessage(JSON.parse(newVal));
+            });
+            setMessages(await kv.getJSON("twitch/chat-history"));
+          });
+        }, []);
+
+        return html`
+          <div>
+            ${messages.map(
+              ({ User, Message }) => html` <div class="messagebox">
+                <div class="username">${User.DisplayName}</div>
+                <div class="content">${Message}</div>
+              </div>`
+            )}
+          </div>
+        `;
+      };
+
+      ReactDOM.render(html`<${Chat} />`, document.getElementById("chat"));
+    </script>
+  </body>
+</html>
